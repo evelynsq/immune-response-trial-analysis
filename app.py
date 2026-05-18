@@ -11,7 +11,7 @@ summary_df = summary_table.freq_table('drug-response.db')
 
 # app UI
 app.layout = [
-    html.Div(children='Hello World')
+    html.Div(children='Dashboard in progress.')
 ]
 
 if __name__ == '__main__':

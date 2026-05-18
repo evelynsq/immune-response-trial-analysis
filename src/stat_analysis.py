@@ -1,6 +1,7 @@
 import os
 import matplotlib.pyplot as plt
 from scipy.stats import mannwhitneyu
+from scipy import stats
 import seaborn as sns
 import sqlite3
 import pandas as pd
@@ -149,7 +150,7 @@ def mann_whitney_test(csv_file: str) -> dict[str, float]:
             non_responder[non_responder['population'] == cell]['percentage'])
         
         results[cell] = p_val
-        
+
     return results
 
 
@@ -184,35 +185,6 @@ def check_distr(csv_file: str) -> None:
     return
 
 
-def fdr_control(pvals: list[int], fdr: float) -> float:
-    """
-    inputs:
-    pvals - pvalues found from Mann-Whitney U tests
-    fdr - false discovery rate that should be controlled for
-
-    output:
-    new adjusted FDR cutoff due to multiple hypothesis testing
-
-    Control FDR with Benjamini-Hochberg method due to 
-    multiple hypothesis testing with all cell populations.
-    """
-    sorted_pvals = sorted(pvals)
-    thresholds = []
-
-    # multiply rank by target FDR of 0.05, divided by num of tests
-    for i in range(1, len(pvals) + 1):
-        thresholds.append((i * fdr) / len(pvals))
-    
-    # largest p-value <= its threshold is the new sig cutoff
-    largest_pval = sorted_pvals[0]
-    for i in range(len(sorted_pvals)):
-        if sorted_pvals[i] <= thresholds[i]:
-            if largest_pval < sorted_pvals[i]:
-                largest_pval = sorted_pvals
-
-    return largest_pval
-
-
 if __name__ == "__main__":
     # the call to the functions below will run with 'make pipeline', and
     # assumes you are in the project root directory (not inside 'outputs' subdir)
@@ -228,20 +200,24 @@ if __name__ == "__main__":
     create_boxplot('./outputs/part-3/filtered-results.csv')
 
     # get p-values from Mann-Whitney U tests performed per each cell population
-    pvals = mann_whitney_test('./outputs/part-3/filtered-results.csv')
+    og_pvals = pd.Series(mann_whitney_test('./outputs/part-3/filtered-results.csv'))
 
-    # control FDR and get new cutoff for significance
-    new_cutoff = fdr_control(list(pvals.values()), 0.05)
+    # control FDR and get new adjusted p-values
+    corrected_pvals = pd.Series(stats.false_discovery_control(og_pvals, method='bh'),
+                                index=og_pvals.index)
 
     # check which cell populations have a sig difference
     rows = []
-    for cell, pval in pvals.items():
-        if pval <= new_cutoff:
-            rows.append([cell, pval, 'yes'])
-        else:
-            rows.append([cell, pval, 'no'])
+    for cell, og_pval in og_pvals.items():
+        new_pval = corrected_pvals[cell]
 
-    results = pd.DataFrame(rows, columns=['population', 'pval', 'significant'])
+        if new_pval <= 0.05:
+            rows.append([cell, og_pval, new_pval, 'yes'])
+        else:
+            rows.append([cell, og_pval, new_pval, 'no'])
+
+    results = pd.DataFrame(rows, columns=['population', 'original_pval', 
+                                          'adjusted_pval', 'significant'])
     results.to_csv('./outputs/part-3/pvals-per-population.csv', index=False)
 
     # histograms showing distributions of responders vs. non-responders
@@ -250,6 +226,6 @@ if __name__ == "__main__":
     print("See filtered-results.csv in 'outputs' subdirectory for filtered table.")
     print("Boxplots of cell population frequencies saved to freq-boxplot.png.")
     print("Mann-Whitney U test completed for all cell populations.")
-    print(f"New FDR cutoff of {new_cutoff} chosen with Benjamini-Hochberg procedure.")
+    print("Adjusted p-values after Benjamini-Hochberg correction:\n", corrected_pvals)
     print("Please see pvals-per-population.csv for which cell populations are",
           "significantly different between responders and non-responders.\n")
