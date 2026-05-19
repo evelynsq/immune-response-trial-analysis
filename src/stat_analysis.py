@@ -24,11 +24,9 @@ def filter_table(freq_table: pd.DataFrame, db_file: str, condition: str,
     sample_type - sample type to filter by
 
     outputs:
-    Dataframe filtered based on metadata provided. Additional summary 
-    statistics files will be written to 'outputs' subdirectory.
+    Dataframe filtered based on metadata provided.
 
-    Filters summary table from Part 2 based on metadata, then outputs 
-    summary stats comparing responders vs. non-responders.
+    Filters summary table from Part 2 based on metadata.
     """
     filtered_df = pd.DataFrame()
     try:
@@ -61,26 +59,6 @@ def filter_table(freq_table: pd.DataFrame, db_file: str, condition: str,
             
             if sample_type is not None:
                 filtered_df = filtered_df[(filtered_df['sample_type'] == sample_type)]
-                
-            print("Successfully created filtered frequencies table based on",
-                  "condition, treatment, and sample type given!")
-            
-            # quick comparison of responders vs. non-responders
-            summary_stats = filtered_df.rename(columns={'percentage': 'relative_freq'})
-            summary_stats = summary_stats.drop(['time_from_treatment_start', 
-                                                'total_count', 'count'], axis=1)
-            summary_stats['relative_freq'] = summary_stats['relative_freq'] / 100
-
-            # save summary stats of responders vs. non-responders to files
-            summary_stats[summary_stats['response'] == 'yes'].groupby(
-                    'population').describe().reset_index().to_csv(
-                        './outputs/part-3/responders-stats.csv',
-                        index=False)
-
-            summary_stats[summary_stats['response'] == 'no'].groupby(
-                    'population').describe().reset_index().to_csv(
-                        './outputs/part-3/nonresponders-stats.csv',
-                        index=False)
 
     except sqlite3.Error as e:
         print("Database connection failed with: \n", e)
@@ -116,10 +94,10 @@ def create_boxplot(csv_file: str) -> None:
     return
 
 
-def mann_whitney_test(csv_file: str) -> dict[str, float]:
+def mann_whitney_test(samp_data: pd.DataFrame) -> dict[str, float]:
     """
     input:
-    csv_file - CSV created from filter_table function
+    samp_data - dataframe created from filter_table function
 
     output:
     dictionary of {cell_population: pvalue} results from tests
@@ -129,7 +107,6 @@ def mann_whitney_test(csv_file: str) -> dict[str, float]:
     of responders vs. non-responders. Takes the mean of samples 
     across timepoints to meet independence assumption.
     """
-    samp_data = pd.read_csv(csv_file, header=0)
     samp_data['percentage'] = samp_data['percentage'] / 100
     
     # take mean across samples coming from same patient, per population
@@ -192,15 +169,32 @@ if __name__ == "__main__":
                           header=0)
 
     # filter table to only get melanoma patients treated with miraclib (PBMC samples)
-    filter_table(sum_tbl, 
-                'drug-response.db', 'melanoma', 'miraclib', 'PBMC').to_csv(
-                './outputs/part-3/filtered-results.csv', index=False)
+    filtered_df = filter_table(sum_tbl, 
+                    'drug-response.db', 'melanoma', 'miraclib', 'PBMC')
+    filtered_df.to_csv('./outputs/part-3/filtered-results.csv', index=False)
+    
+    # quick comparison of responders vs. non-responders
+    summary_stats = filtered_df.rename(columns={'percentage': 'relative_freq'})
+    summary_stats = summary_stats.drop(['time_from_treatment_start', 
+                                        'total_count', 'count'], axis=1)
+    summary_stats['relative_freq'] = summary_stats['relative_freq'] / 100
+
+    # save summary stats of responders vs. non-responders to files
+    summary_stats[summary_stats['response'] == 'yes'].groupby(
+            'population').describe().reset_index().to_csv(
+                './outputs/part-3/responders-stats.csv',
+                index=False)
+    
+    summary_stats[summary_stats['response'] == 'no'].groupby(
+            'population').describe().reset_index().to_csv(
+                './outputs/part-3/nonresponders-stats.csv',
+                index=False)
     
     # create boxplot of population relative freqs of responders vs. non-responders
     create_boxplot('./outputs/part-3/filtered-results.csv')
 
     # get p-values from Mann-Whitney U tests performed per each cell population
-    og_pvals = pd.Series(mann_whitney_test('./outputs/part-3/filtered-results.csv'))
+    og_pvals = pd.Series(mann_whitney_test(filtered_df))
 
     # control FDR and get new adjusted p-values
     corrected_pvals = pd.Series(stats.false_discovery_control(og_pvals, method='bh'),

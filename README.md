@@ -8,9 +8,15 @@ A link to the dashboard.
 
 # Clinical Trial Immune Cell Populations Analysis
 
-Evelyn Quan
+Evelyn Quan (evelyn.quan7@gmail.com)
 
 ## Instructions to Run Code
+
+Begin by cloning this repository and changing to the project directory:
+```
+git clone https://github.com/evelynsq/immune-response-trial-analysis.git
+cd immune-response-trial-analysis/
+```
 
 Python version 2.5 or higher is required, as these versions contain SQLite as part of the standard library.
 
@@ -34,13 +40,13 @@ To execute the entire data pipeline, run:
 make pipeline
 ```
 
-To start the interactive dashboard of Bob's analysis results, run:
+To start the interactive dashboard of the analysis results, run:
 
 ```
 make dashboard
 ```
 
-If you are interested in executing a single script by itself, please run it while remaining in the project's root directory.
+*Note*: If you are interested in executing a single script by itself, please run it while remaining in the project's root directory.
 
 
 ## Relational Database Schema: Explanation and Rationale

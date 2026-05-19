@@ -1,5 +1,7 @@
 dash
+dash-bootstrap-components
 matplotlib
 pandas
+plotly
 scipy
 seaborn
