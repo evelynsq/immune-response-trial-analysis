@@ -10,17 +10,17 @@ import src.stat_analysis as stat_analysis
 app = Dash(__name__, external_stylesheets = [dbc.themes.LUX])
 
 #### Import Data
-# Part 2 frequency table
+# Part 2 summary table
 pt2_summary_df = summary_table.freq_table('drug-response.db')
 
 # Part 3 filtered frequency table for melanoma miraclib patients (PBMC only)
 pt3_filtered_df = stat_analysis.filter_table(pt2_summary_df, 
                     'drug-response.db', 'melanoma', 'miraclib', 'PBMC')
 
-# Part 3 get p-values from Mann-Whitney U tests performed per each cell population
+# Part 3 p-values from Mann-Whitney U tests performed per each cell population
 og_pvals = pd.Series(stat_analysis.mann_whitney_test(pt3_filtered_df))
 
-# Part 3 control FDR and get new adjusted p-values
+# Part 3 new adjusted p-values from controlling FDR
 corrected_pvals = pd.Series(stats.false_discovery_control(og_pvals, method='bh'),
                             index=og_pvals.index)
 
@@ -48,11 +48,13 @@ app.layout = dbc.Container([
 
     # Part 2: Data Overview Results Row
     dbc.Row([
-        # relative frequencies table
         dbc.Col([
             html.H5('Part 2: Relative Frequencies Overview'),
-            html.P('The following data shows the relative frequencies of each cell population per sample.'),
-            
+
+            html.P('The following data shows the relative frequencies of each ' \
+                'cell population per sample.'),
+
+            # relative frequencies table
             dash_table.DataTable(
                 id='pt2-freq-table',
                 data=pt2_summary_df.to_dict('records'),
@@ -69,6 +71,7 @@ app.layout = dbc.Container([
                 }
             ),
 
+            # dynamically update num of rows filtered for in data table
             html.Div(id='pt2-num-rows', style={'text-align': 'right'})
 
         ], width=12, style={'margin': '5px',
@@ -80,21 +83,21 @@ app.layout = dbc.Container([
     dbc.Row([
         html.H5('Part 3: Statistical Analysis', 
                 style={'text-align': 'center'}),
+
         html.P('Comparison of differences in cell population relative frequencies of ' \
         'responder vs. non-responder melanoma patients receiving miraclib (PBMC samples only).'),
         
         # boxplot of population frequencies
         dbc.Col([
-            # dcc.Graph(figure=boxplot_fig)
             dcc.Graph(id='pt3-boxplot-fig')
         ], width=6),
 
-        # histograms of population frequencies
+        # histogram of population frequencies
         dbc.Col([
             dcc.Graph(id='pt3-histogram-fig')
         ], width=6),
 
-        # checklist for response status
+        # checklist for filtering plots by response status
         dcc.Checklist(
             id='pt3-checklist',
             options=['Responders', 'Non-Responders'],
@@ -214,16 +217,18 @@ app.layout = dbc.Container([
 )
 def count_pt2_rows(filtered_rows):
     if filtered_rows is None:
-        return str(len(pt2_summary_df)) + ' rows'
+        return str(len(pt2_summary_df)) + ' samples'
     else:
-        return str(len(filtered_rows)) + ' rows'
+        return str(len(filtered_rows)) + ' samples'
     
-# Update boxplot with resp and/or non-resp data based on checklist input - part 3
+# Update boxplot with responder and/or non-responder data based on 
+# checklist input - part 3
 @app.callback(
     Output('pt3-boxplot-fig', 'figure'),
     Input('pt3-checklist', 'value')
 )
 def create_boxplot(checked_items):
+    # map the checked response statuses to their value in the table
     selected_vals = []
     for item in checked_items:
         if item == 'Responders':
@@ -249,12 +254,14 @@ def create_boxplot(checked_items):
                 'population': 'Cell Population'},
         height=600)
 
-# Update histogram with resp and/or non-resp data based on checklist input - part 3
+# Update histogram with responder and/or non-responder data based on 
+# checklist input - part 3
 @app.callback(
     Output('pt3-histogram-fig', 'figure'),
     Input('pt3-checklist', 'value')
 )
 def create_boxplot(checked_items):
+    # map the checked response statuses to their value in the table
     selected_vals = []
     for item in checked_items:
         if item == 'Responders':
@@ -307,9 +314,9 @@ def pt3_stat_test(fdr):
 )
 def count_pt4_rows(filtered_rows):
     if filtered_rows is None:
-        return str(len(pt4_all_samples)) + ' rows'
+        return str(len(pt4_all_samples)) + ' samples'
     else:
-        return str(len(filtered_rows)) + ' rows'
+        return str(len(filtered_rows)) + ' samples'
 
 # Filter table based on project id(s) selected - part 4
 @app.callback(

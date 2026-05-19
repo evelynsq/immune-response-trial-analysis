@@ -69,7 +69,7 @@ def filter_table(freq_table: pd.DataFrame, db_file: str, condition: str,
 def create_boxplot(csv_file: str) -> None:
     """
     input:
-    csv_file: CSV created from filter_table function
+    csv_file: CSV file created from filter_table function
 
     output:
     Check 'outputs' subdirectory in part-3 for boxplot image.
