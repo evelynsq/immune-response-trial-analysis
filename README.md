@@ -1,6 +1,6 @@
 # Clinical Trial Immune Cell Populations Analysis
 
-Evelyn Quan (evelyn.quan7@gmail.com)
+Using cell count data for immune cell populations from patient samples, I analyzed how a potential drug candidate affected the relative frequencies of these cell types in responders vs. non-responders. I also built an interactive dashboard to display the results of my analyses.
 
 ## Instructions to Run Code
 
@@ -87,5 +87,3 @@ immune-response-trial-analysis % make dashboard
 python app.py
 Dash is running on http://127.0.0.1:8050/
 ```
-
-quintazide
