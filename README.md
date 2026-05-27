@@ -68,7 +68,28 @@ My relational database schema would scale well with a growing number of projects
 
 ## Code Structure Overview and Design
 
-![Screenshot showing code structure of repo](images/Code-Structure.png)
+```
+.
+├── Makefile
+├── README.md
+├── app.py
+├── cell-count.csv
+├── drug-response.db
+├── images
+│   ├── Code-Structure.png
+│   └── ER-Diagram.png
+├── load_data.py
+├── outputs
+│   ├── part-2
+│   ├── part-3
+│   └── part-4
+├── requirements.txt
+└── src
+    ├── __pycache__
+    ├── data_subset_analysis.py
+    ├── stat_analysis.py
+    └── summary_table.py
+```
 
 With the exception of `load-data.py`, the source code for the analysis Steps 2-4 can be found in the __src__ subdirectory, divided into separate files for each part. All outputs generated are divided into subfolders in __outputs__ based on which step they were produced in. These choices were made to keep the repository more organized and understandable.
 

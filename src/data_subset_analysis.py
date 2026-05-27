@@ -5,7 +5,6 @@ import pandas as pd
 ###################################
 ### Part 4: Data Subset Analysis
 ###################################
-# quintazide
 
 if not os.path.isdir('outputs/part-4'):
     os.mkdir('outputs/part-4')
