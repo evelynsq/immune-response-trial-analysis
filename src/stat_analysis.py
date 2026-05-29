@@ -1,8 +1,7 @@
 import os
 import matplotlib.pyplot as plt
-from scipy.stats import mannwhitneyu
-from scipy import stats
-import seaborn as sns
+from scipy.stats import mannwhitneyu, false_discovery_control
+from seaborn import boxplot as sns_boxplot
 import sqlite3
 import pandas as pd
 
@@ -44,8 +43,7 @@ def filter_table(freq_table: pd.DataFrame, db_file: str, condition: str,
                 INNER JOIN patients p ON p.patient_id = s.patient_id""",
                 con)
             meta_df = meta_df.rename(columns={'sample_id': 'sample'})
-            meta_df['response'] = meta_df['response'].replace({1:'yes',
-                                                               0:'no'})
+            meta_df['response'] = meta_df['response'].replace({1:'yes', 0:'no'})
 
             # left join relative frequencies table with metadata
             freq_table = freq_table.merge(meta_df, on='sample', how='left')
@@ -80,7 +78,7 @@ def create_boxplot(csv_file: str) -> None:
     samp_data = pd.read_csv(csv_file, header=0)
 
     # plot by cell population, with different colors for response status
-    sns.boxplot(samp_data, x='population', y='percentage', hue='response')
+    sns_boxplot(samp_data, x='population', y='percentage', hue='response')
 
     # plot customizations
     plt.title('Immune Response to Miraclib by Melanoma Patients \n(PBMC Samples Only)')
@@ -182,13 +180,11 @@ if __name__ == "__main__":
     # save summary stats of responders vs. non-responders to files
     summary_stats[summary_stats['response'] == 'yes'].groupby(
             'population').describe().reset_index().to_csv(
-                './outputs/part-3/responders-stats.csv',
-                index=False)
+                './outputs/part-3/responders-stats.csv', index=False)
     
     summary_stats[summary_stats['response'] == 'no'].groupby(
             'population').describe().reset_index().to_csv(
-                './outputs/part-3/nonresponders-stats.csv',
-                index=False)
+                './outputs/part-3/nonresponders-stats.csv', index=False)
     
     # create boxplot of population relative freqs of responders vs. non-responders
     create_boxplot('./outputs/part-3/filtered-results.csv')
@@ -197,7 +193,7 @@ if __name__ == "__main__":
     og_pvals = pd.Series(mann_whitney_test(filtered_df))
 
     # control FDR and get new adjusted p-values
-    corrected_pvals = pd.Series(stats.false_discovery_control(og_pvals, method='bh'),
+    corrected_pvals = pd.Series(false_discovery_control(og_pvals, method='bh'),
                                 index=og_pvals.index)
 
     # check which cell populations have a sig difference

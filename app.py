@@ -2,7 +2,6 @@ import pandas as pd
 from dash import Dash, dash_table, dcc, html, Input, Output
 import dash_bootstrap_components as dbc
 import plotly.express as px
-from scipy.stats import mannwhitneyu
 from scipy import stats
 import src.summary_table as summary_table
 import src.stat_analysis as stat_analysis
